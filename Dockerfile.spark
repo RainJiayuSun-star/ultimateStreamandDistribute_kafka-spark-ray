@@ -36,7 +36,7 @@ WORKDIR /app
 # Copy Spark application code
 COPY src/spark/ /app/spark/
 COPY src/utils/ /app/utils/
-COPY src/kafka/ /app/kafka/
+COPY src/kafka_weather/ /app/kafka_weather/
 
 # Set Python path
 ENV PYTHONPATH=/app:$PYTHONPATH

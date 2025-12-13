@@ -32,7 +32,7 @@ ENV KAFKA_CLUSTER_ID=dCHffFWYTCKWXiesmJMN9w
 WORKDIR /app
 
 # Copy Kafka module (includes producer and consumers)
-COPY src/kafka/ /app/kafka/
+COPY src/kafka_weather/ /app/kafka_weather/
 COPY src/utils/ /app/utils/
 
 # Set Python path
@@ -66,7 +66,7 @@ sleep 5\n\
 \n\
 # Start producer in foreground (producer will create topics)\n\
 echo "Starting weather producer (will create topics if needed)..."\n\
-python3 /app/kafka/producer.py\n\
+python3 /app/kafka_weather/producer.py\n\
 ' > /app/start-kafka-producer.sh && chmod +x /app/start-kafka-producer.sh
 
 # Start both Kafka server and producer
