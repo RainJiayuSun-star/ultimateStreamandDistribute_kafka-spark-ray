@@ -1,0 +1,27 @@
+FROM bitnami/spark:3.5
+
+# Switch to root to install additional packages
+USER root
+
+# Install Python dependencies for Spark streaming
+RUN pip3 install --no-cache-dir \
+    kafka-python==2.0.2 \
+    pyspark==3.5.0
+
+# Create directory for application code
+WORKDIR /app
+
+# Copy Spark application code
+COPY src/spark/ /app/spark/
+COPY src/utils/ /app/utils/
+COPY src/kafka/kafka_utils.py /app/kafka/kafka_utils.py
+
+# Set Python path
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+# Switch back to spark user
+USER 1001
+
+# Default command (can be overridden in docker-compose)
+CMD ["spark-submit", "--class", "org.apache.spark.deploy.master.Master", "--master", "local[*]"]
+

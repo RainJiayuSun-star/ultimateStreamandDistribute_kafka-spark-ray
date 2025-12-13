@@ -1,0 +1,33 @@
+FROM ubuntu:22.04
+
+# Install Python and dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python packages
+RUN pip3 install --no-cache-dir \
+    kafka-python==2.0.2 \
+    flask==3.0.0 \
+    flask-cors==4.0.0 \
+    requests==2.31.0 \
+    python-dotenv==1.0.0
+
+# Create directory for application code
+WORKDIR /app
+
+# Copy API code
+COPY src/api/ /app/api/
+COPY src/kafka/ /app/kafka/
+COPY src/utils/ /app/utils/
+
+# Set Python path
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+# Expose API port
+EXPOSE 5000
+
+# Run API
+CMD ["python3", "/app/api/app.py"]
+

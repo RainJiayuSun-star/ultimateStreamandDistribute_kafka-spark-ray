@@ -1,0 +1,28 @@
+FROM rayproject/ray:latest
+
+# Install Python dependencies for Ray
+RUN pip install --no-cache-dir \
+    kafka-python==2.0.2 \
+    numpy==1.24.3 \
+    pandas==2.1.1 \
+    scikit-learn==1.3.2 \
+    torch==2.1.0 \
+    requests==2.31.0
+
+# Create directory for application code
+WORKDIR /app
+
+# Copy Ray application code
+COPY src/ray/ /app/ray/
+COPY src/kafka/ /app/kafka/
+COPY src/utils/ /app/utils/
+
+# Set Python path
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+# Expose Ray dashboard port
+EXPOSE 8265
+
+# Default command (can be overridden in docker-compose)
+CMD ["ray", "start", "--head", "--port=6379", "--dashboard-host=0.0.0.0"]
+

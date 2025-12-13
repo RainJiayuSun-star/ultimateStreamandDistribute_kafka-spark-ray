@@ -1,0 +1,73 @@
+FROM ubuntu:22.04
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    openjdk-11-jdk \
+    python3 \
+    python3-pip \
+    net-tools \
+    lsof \
+    nano \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+
+# Install Python packages for Kafka and Producer
+RUN pip3 install --no-cache-dir \
+    kafka-python==2.0.2 \
+    requests==2.31.0 \
+    python-dotenv==1.0.0
+
+# Download and install Kafka (KRaft mode - no Zookeeper needed)
+RUN wget https://archive.apache.org/dist/kafka/3.6.2/kafka_2.12-3.6.2.tgz && \
+    tar -xf kafka_2.12-3.6.2.tgz && \
+    rm kafka_2.12-3.6.2.tgz
+
+# Set Kafka cluster ID (from bin/kafka-storage.sh random-uuid)
+ENV KAFKA_CLUSTER_ID=dCHffFWYTCKWXiesmJMN9w
+
+# Create directory for application code
+WORKDIR /app
+
+# Copy Kafka module (includes producer and consumers)
+COPY src/kafka/ /app/kafka/
+COPY src/utils/ /app/utils/
+
+# Set Python path
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+# Expose Kafka port
+EXPOSE 9092
+
+# Create startup script that runs both Kafka and Producer
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# Start Kafka server in background\n\
+cd /kafka_2.12-3.6.2 && \\\n\
+bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties && \\\n\
+bin/kafka-server-start.sh config/kraft/server.properties &\n\
+KAFKA_PID=$!\n\
+\n\
+# Wait for Kafka to be ready\n\
+echo "Waiting for Kafka to start..."\n\
+for i in {1..30}; do\n\
+    if netstat -tuln | grep -q :9092; then\n\
+        echo "Kafka is ready!"\n\
+        break\n\
+    fi\n\
+    sleep 1\n\
+done\n\
+\n\
+# Additional wait to ensure Kafka is fully initialized\n\
+sleep 5\n\
+\n\
+# Start producer in foreground (producer will create topics)\n\
+echo "Starting weather producer (will create topics if needed)..."\n\
+python3 /app/kafka/producer.py\n\
+' > /app/start-kafka-producer.sh && chmod +x /app/start-kafka-producer.sh
+
+# Start both Kafka server and producer
+CMD ["/app/start-kafka-producer.sh"]
