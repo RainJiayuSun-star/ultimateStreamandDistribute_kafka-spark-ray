@@ -263,10 +263,130 @@ docker exec kafka /kafka_2.12-3.6.2/bin/kafka-console-consumer.sh \
 
 ---
 
+### 3. `test_data_collector.py` - Data Collector Verification
+
+**Purpose:** Verifies that the Kafka data collector is working correctly and saving files as expected.
+
+**What it does:**
+- Checks that output directory structure exists
+- Verifies checkpoint file exists and is valid
+- Tests that data files contain valid JSON
+- Checks Kafka topic status and partition distribution
+- Explains why only some partitions may be used
+
+**Prerequisites:**
+- Kafka container must be running
+- Data collector should be running (or have run previously)
+- Producer should have sent some messages
+
+**How to Run:**
+
+**Option A: Run in Docker (Recommended)**
+```bash
+docker exec -it kafka python3 /app/src/testers/test_data_collector.py
+```
+
+**Option B: Run Locally**
+```bash
+python3 src/testers/test_data_collector.py
+```
+
+**Expected Output:**
+```
+================================================================================
+Kafka Data Collector Test Suite
+================================================================================
+
+Output Directory: /app/src/data/kafka_streaming
+Checkpoint File: /app/src/data/kafka_streaming/checkpoints/offset_checkpoint.json
+Topic: weather-raw
+Kafka Broker: kafka:9092
+
+================================================================================
+TEST 1: Directory Structure
+================================================================================
+✓ Output directory exists: /app/src/data/kafka_streaming
+✓ Found 1 date directories:
+  - 2025-12-13
+✓ Checkpoint directory exists: /app/src/data/kafka_streaming/checkpoints
+
+================================================================================
+TEST 2: Checkpoint File
+================================================================================
+✓ Checkpoint file exists
+✓ Checkpoint file is valid JSON
+  Last updated: 2025-12-13T10:30:00Z
+  Offsets for weather-raw:
+    Partition 0: 12345
+    Partition 1: 12340
+    ...
+
+================================================================================
+TEST 3: Data Files
+================================================================================
+✓ Found 5 .jsonl file(s)
+  Testing: Madison_2025-12-13.jsonl
+    Lines: 100
+    ✓ All checked lines are valid JSON
+    Sample data keys: ['station_id', 'station_name', 'timestamp', ...]
+
+================================================================================
+TEST 4: Kafka Topic Status
+================================================================================
+✓ Topic weather-raw exists
+  Total partitions: 4
+  Partition IDs: [0, 1, 2, 3]
+
+================================================================================
+TEST 5: Partition Distribution
+================================================================================
+  Sampling up to 100 messages to check partition distribution...
+  ✓ Sampled 100 messages
+  Partition distribution:
+    Partition 0: 25 messages (25.0%)
+    Partition 1: 30 messages (30.0%)
+    Partition 2: 45 messages (45.0%)
+  Partitions used: 3
+  ⚠ Only 3 out of 4 partitions have messages
+    → This is normal if:
+      - Kafka uses hash(key) % num_partitions for partitioning
+      - Station IDs hash to only some partitions
+      - Not all partitions have received messages yet
+
+================================================================================
+TEST SUMMARY
+================================================================================
+✓ PASS: Directory Structure
+✓ PASS: Checkpoint File
+✓ PASS: Data Files
+✓ PASS: Kafka Topic Status
+✓ PASS: Partition Distribution
+
+Results: 5/5 tests passed
+```
+
+**Why Only 3 Partitions Are Used:**
+
+Kafka's default partitioner uses: `hash(key) % num_partitions`
+
+- Your producer uses `station_id` as the message key
+- With 5 stations and 4 partitions, the hash values may only map to 3 partitions
+- This is **normal behavior** - Kafka distributes based on key hash, not round-robin
+- All messages for the same station go to the same partition (maintains order)
+- If you want to use all 4 partitions, you could:
+  - Use more stations (more keys = better distribution)
+  - Use a custom partitioner
+  - Use `None` as key (round-robin, but loses per-station ordering)
+
+**To Stop:** The tester runs once and exits (unlike the other testers)
+
+---
+
 ## Notes
 
 - Both testers run **continuously** until you stop them with `Ctrl+C`
 - They use **consumer groups**, so multiple instances can run in parallel (each will consume different partitions)
 - The testers are designed for **development/debugging** purposes
 - For production monitoring, consider using Kafka's built-in tools or a proper monitoring solution
+- **Partition Distribution**: It's normal for only some partitions to be used if you have fewer unique keys than partitions
 

@@ -56,6 +56,14 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 MAX_RECORDS_PER_REQUEST = 1000  # CDO API limit
 REQUEST_DELAY_SECONDS = 0.5  # Delay between requests to avoid rate limiting
 
+# Calculate optimal chunk size based on number of datatypes
+# Each day can have multiple records (one per datatype)
+NUM_DATATYPES = len(DATATYPE_IDS.split(','))
+# Maximum days per chunk = API limit / number of datatypes
+# With 6 datatypes and 1000 record limit: 1000/6 = ~166 days per chunk
+# Using 95% to maximize data per request while staying safely under limit
+OPTIMAL_DAYS_PER_CHUNK = int((MAX_RECORDS_PER_REQUEST / NUM_DATATYPES) * 0.95)
+
 
 # --- Functions ---
 
@@ -105,11 +113,15 @@ def fetch_cdo_historical_data(start_date: str, end_date: str, station_id: str) -
         return []
 
 
-def chunk_date_range(start_date: datetime, end_date: datetime, days_per_chunk: int = 365) -> list:
+def chunk_date_range(start_date: datetime, end_date: datetime, days_per_chunk: int = None) -> list:
     """
-    Splits a date range into smaller chunks to handle API limits.
+    Splits a date range into chunks to handle API limits.
+    If days_per_chunk is None, uses the optimal chunk size calculated from datatypes.
     Returns list of (start, end) datetime tuples.
     """
+    if days_per_chunk is None:
+        days_per_chunk = OPTIMAL_DAYS_PER_CHUNK
+    
     chunks = []
     current_start = start_date
     
@@ -152,13 +164,18 @@ def save_data_to_file(data: list, station_name: str, start_date: str, end_date: 
     return filepath
 
 
-def fetch_and_save_station_data(station: dict, start_date: datetime, end_date: datetime, days_per_chunk: int = 365) -> dict:
+def fetch_and_save_station_data(station: dict, start_date: datetime, end_date: datetime, days_per_chunk: int = None) -> dict:
     """
     Fetches all historical data for a station across the date range and saves to files.
+    If days_per_chunk is None, uses optimal chunk size based on datatypes.
     Returns summary statistics.
     """
     station_id = station['id']
     station_name = station['name']
+    
+    # Use optimal chunk size if not specified
+    if days_per_chunk is None:
+        days_per_chunk = OPTIMAL_DAYS_PER_CHUNK
     
     print(f"\n{'='*80}")
     print(f"Processing Station: {station_name} ({station_id})")
@@ -167,7 +184,9 @@ def fetch_and_save_station_data(station: dict, start_date: datetime, end_date: d
     
     # Split date range into chunks
     date_chunks = chunk_date_range(start_date, end_date, days_per_chunk)
-    print(f"Split into {len(date_chunks)} chunk(s) of ~{days_per_chunk} days each")
+    total_days = (end_date - start_date).days + 1
+    print(f"Total days: {total_days}")
+    print(f"Split into {len(date_chunks)} chunk(s) of ~{days_per_chunk} days each (optimal for {NUM_DATATYPES} datatypes)")
     
     all_records = []
     saved_files = []
@@ -190,14 +209,41 @@ def fetch_and_save_station_data(station: dict, start_date: datetime, end_date: d
             time.sleep(REQUEST_DELAY_SECONDS)
     
     # Also save a combined file for convenience
+    # Calculate actual date range from the records
     if all_records:
-        combined_filepath = save_data_to_file(
-            all_records, 
-            station_name, 
-            start_date.strftime('%Y-%m-%d'), 
-            end_date.strftime('%Y-%m-%d')
-        )
-        saved_files.append(str(combined_filepath))
+        # Extract actual min and max dates from records
+        dates = []
+        for record in all_records:
+            if record.get('date'):
+                try:
+                    # Parse date string (format: "2020-01-01T00:00:00")
+                    date_str = record['date']
+                    if 'T' in date_str:
+                        date_str = date_str.split('T')[0]  # Get just the date part
+                    dt = datetime.strptime(date_str, '%Y-%m-%d')
+                    dates.append(dt)
+                except (ValueError, KeyError):
+                    continue
+        
+        if dates:
+            actual_start = min(dates).date()
+            actual_end = max(dates).date()
+            combined_filepath = save_data_to_file(
+                all_records, 
+                station_name, 
+                actual_start.strftime('%Y-%m-%d'), 
+                actual_end.strftime('%Y-%m-%d')
+            )
+            saved_files.append(str(combined_filepath))
+        else:
+            # Fallback to requested date range if we can't parse dates
+            combined_filepath = save_data_to_file(
+                all_records, 
+                station_name, 
+                start_date.strftime('%Y-%m-%d'), 
+                end_date.strftime('%Y-%m-%d')
+            )
+            saved_files.append(str(combined_filepath))
     
     return {
         'station_name': station_name,
@@ -266,24 +312,25 @@ if __name__ == "__main__":
     END_DATE = datetime(2023, 12, 31)
     START_DATE = datetime(2020, 1, 1)  # ~4 years of data
     
-    # Days per chunk: Adjust based on how many records per day you expect
-    # For daily data, 365 days = ~365 records per chunk (well under 1000 limit)
-    # For hourly data, you'd need much smaller chunks
-    DAYS_PER_CHUNK = 365
+    # Calculate total days
+    total_days = (END_DATE - START_DATE).days + 1
     
-    print(f"\nDate Range: {START_DATE.strftime('%Y-%m-%d')} to {END_DATE.strftime('%Y-%m-%d')}")
-    print(f"Days per Chunk: {DAYS_PER_CHUNK}")
+    print(f"\nDate Range: {START_DATE.strftime('%Y-%m-%d')} to {END_DATE.strftime('%Y-%m-%d')} ({total_days} days)")
+    print(f"Number of Datatypes: {NUM_DATATYPES}")
+    print(f"Optimal Days per Chunk: {OPTIMAL_DAYS_PER_CHUNK} (calculated from API limit)")
+    print(f"Estimated Chunks per Station: ~{int(total_days / OPTIMAL_DAYS_PER_CHUNK) + 1}")
     print(f"\nStarting data fetch...\n")
     
     # Process each station
     summaries = []
     for station in STATIONS:
         try:
+            # Use None to let the function use optimal chunk size
             summary = fetch_and_save_station_data(
                 station, 
                 START_DATE, 
                 END_DATE, 
-                days_per_chunk=DAYS_PER_CHUNK
+                days_per_chunk=None  # Use optimal chunk size
             )
             summaries.append(summary)
         except Exception as e:

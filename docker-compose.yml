@@ -24,6 +24,25 @@ services:
       timeout: 5s
       retries: 5
 
+  # Kafka Data Collector (saves raw data to files)
+  kafka-data-collector:
+    image: kafka
+    container_name: kafka-data-collector
+    hostname: kafka-data-collector
+    mem_limit: 1g
+    cpus: 0.5
+    volumes:
+      - ./src:/app/src:ro
+      - ./src/data/kafka_streaming:/app/data/kafka_streaming
+    networks:
+      - weather-network
+    command: >
+      sh -c "sleep 10 && python3 /app/src/kafka_weather/data_collector.py"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
   # Spark Master
   spark-master:
     build:
@@ -154,6 +173,27 @@ services:
       --memory 3g"
     depends_on:
       - spark-master
+
+  # Spark Streaming Application
+  spark-streaming:
+    image: spark-worker
+    container_name: spark-streaming
+    hostname: spark-streaming
+    mem_limit: 2g
+    cpus: 1
+    environment:
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    volumes:
+      - ./src:/app/src:ro
+      - spark-checkpoints:/app/checkpoints
+    networks:
+      - weather-network
+    command: >
+      sh -c "sleep 30 && /app/start_spark_streaming.sh"
+    depends_on:
+      - spark-master
+      - kafka
+    restart: unless-stopped
 
   # Ray Head
   ray-head:

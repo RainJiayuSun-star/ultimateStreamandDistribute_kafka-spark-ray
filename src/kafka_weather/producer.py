@@ -1,10 +1,11 @@
 import time
 import json
+import sys
 import requests
 from datetime import datetime
 from kafka import KafkaAdminClient, KafkaProducer
 from kafka.admin import NewTopic
-from kafka.errors import UnknownTopicOrPartitionError
+from kafka.errors import UnknownTopicOrPartitionError, NoBrokersAvailable
 
 # Configuration
 BROKER = 'localhost:9092'  # Use 'kafka:9092' in Docker, 'localhost:9092' for local testing
@@ -149,9 +150,31 @@ def main():
     print("Weather Data Producer Starting...")
     print("=" * 60)
     
-    # Initialize Kafka admin client
+    # Initialize Kafka admin client with retry logic
     print("\n[1/3] Initializing Kafka admin client...")
-    admin_client = KafkaAdminClient(bootstrap_servers=[BROKER])
+    admin_client = None
+    max_retries = 10
+    retry_count = 0
+    
+    while retry_count < max_retries:
+        try:
+            admin_client = KafkaAdminClient(bootstrap_servers=[BROKER])
+            # Test connection by listing topics
+            admin_client.list_topics()
+            print("  ✓ Successfully connected to Kafka broker")
+            break
+        except NoBrokersAvailable:
+            retry_count += 1
+            if retry_count < max_retries:
+                print(f"  ⏳ Kafka broker not ready yet, retrying ({retry_count}/{max_retries})...")
+                time.sleep(2)
+            else:
+                print(f"  ✗ ERROR: Could not connect to Kafka broker after {max_retries} attempts")
+                print(f"     Make sure Kafka is running on {BROKER}")
+                sys.exit(1)
+        except Exception as e:
+            print(f"  ✗ ERROR: Unexpected error connecting to Kafka: {e}")
+            sys.exit(1)
     
     # Create Kafka topics
     print("\n[2/3] Creating Kafka topics...")
@@ -161,6 +184,7 @@ def main():
     # Requirements from p7:
     # 1. retries up to 10 times when send requests fail
     # 2. send calls are not acknowledged until all in-sync replicas have received the data
+    # Note: KafkaProducer is lazy - it only connects when first used
     print("\n[3/3] Initializing Kafka producer...")
     producer = KafkaProducer(
         bootstrap_servers=[BROKER],
@@ -169,7 +193,7 @@ def main():
         value_serializer=lambda v: json.dumps(v).encode('utf-8'),
         key_serializer=lambda k: k.encode('utf-8') if k else None
     )
-    print("Producer initialized successfully!")
+    print("  ✓ Kafka producer initialized successfully")
     
     # Main loop: continuously fetch and publish weather data
     print(f"\n{'=' * 60}")

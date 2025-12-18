@@ -21,6 +21,7 @@ CONSUMER_GROUP_SPARK = "spark-streaming-group"
 CONSUMER_GROUP_RAY = "ray-ml-inference"
 CONSUMER_GROUP_API = "dashboard-consumers"
 CONSUMER_GROUP_DEBUG = "debug"
+CONSUMER_GROUP_DATA_COLLECTOR = "kafka-data-collector"
 
 # Kafka producer/consumer settings
 KAFKA_PRODUCER_CONFIG = {

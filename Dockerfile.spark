@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     net-tools \
     lsof \
     nano \
+    netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Java environment
@@ -34,9 +35,15 @@ RUN pip3 install --no-cache-dir \
 WORKDIR /app
 
 # Copy Spark application code
+# Copy to both /app/spark/ (for imports) and /app/src/spark/ (for spark-submit path)
 COPY src/spark/ /app/spark/
+COPY src/spark/ /app/src/spark/
 COPY src/utils/ /app/utils/
+COPY src/utils/ /app/src/utils/
 COPY src/kafka_weather/ /app/kafka_weather/
+COPY src/kafka_weather/ /app/src/kafka_weather/
+COPY scripts/start_spark_streaming.sh /app/start_spark_streaming.sh
+RUN chmod +x /app/start_spark_streaming.sh
 
 # Set Python path
 ENV PYTHONPATH=/app:$PYTHONPATH
