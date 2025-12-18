@@ -14,7 +14,7 @@ WORKDIR /app
 
 # Copy Ray application code
 COPY src/ray/ /app/ray/
-COPY src/kafka/ /app/kafka/
+COPY src/kafka_weather/ /app/kafka_weather/
 COPY src/utils/ /app/utils/
 
 # Set Python path

@@ -32,8 +32,10 @@ ENV KAFKA_CLUSTER_ID=dCHffFWYTCKWXiesmJMN9w
 WORKDIR /app
 
 # Copy Kafka module (includes producer and consumers)
-COPY src/kafka/ /app/kafka/
+COPY src/kafka_weather/ /app/kafka_weather/
 COPY src/utils/ /app/utils/
+COPY src/kafka_weather/ /app/src/kafka_weather/
+COPY src/utils/ /app/src/utils/
 
 # Set Python path
 ENV PYTHONPATH=/app:$PYTHONPATH
@@ -41,32 +43,61 @@ ENV PYTHONPATH=/app:$PYTHONPATH
 # Expose Kafka port
 EXPOSE 9092
 
+# Create a Python script to check if Kafka is ready
+RUN echo '#!/usr/bin/env python3\n\
+import sys\n\
+import time\n\
+from kafka import KafkaAdminClient\n\
+from kafka.errors import NoBrokersAvailable\n\
+\n\
+broker = "localhost:9092"\n\
+max_retries = 60\n\
+retry_count = 0\n\
+\n\
+print("Waiting for Kafka to be ready...")\n\
+while retry_count < max_retries:\n\
+    try:\n\
+        admin_client = KafkaAdminClient(bootstrap_servers=[broker], request_timeout_ms=2000)\n\
+        admin_client.list_topics()\n\
+        print("Kafka is ready and accepting connections!")\n\
+        sys.exit(0)\n\
+    except NoBrokersAvailable:\n\
+        retry_count += 1\n\
+        if retry_count < max_retries:\n\
+            time.sleep(1)\n\
+        else:\n\
+            print(f"ERROR: Kafka failed to start after {max_retries} seconds")\n\
+            sys.exit(1)\n\
+    except Exception as e:\n\
+        retry_count += 1\n\
+        if retry_count < max_retries:\n\
+            time.sleep(1)\n\
+        else:\n\
+            print(f"ERROR: Unexpected error: {e}")\n\
+            sys.exit(1)\n\
+' > /app/wait-for-kafka.py && chmod +x /app/wait-for-kafka.py
+
 # Create startup script that runs both Kafka and Producer
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
-# Start Kafka server in background\n\
+# Configure Kafka advertised listeners for Docker network\n\
 cd /kafka_2.12-3.6.2 && \\\n\
+echo "advertised.listeners=PLAINTEXT://kafka:9092" >> config/kraft/server.properties && \\\n\
 bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties && \\\n\
 bin/kafka-server-start.sh config/kraft/server.properties &\n\
 KAFKA_PID=$!\n\
 \n\
-# Wait for Kafka to be ready\n\
-echo "Waiting for Kafka to start..."\n\
-for i in {1..30}; do\n\
-    if netstat -tuln | grep -q :9092; then\n\
-        echo "Kafka is ready!"\n\
-        break\n\
-    fi\n\
-    sleep 1\n\
-done\n\
+# Wait for Kafka to be ready using Python script\n\
+python3 /app/wait-for-kafka.py\n\
 \n\
 # Additional wait to ensure Kafka is fully initialized\n\
-sleep 5\n\
+echo "Waiting additional 3 seconds for Kafka to fully initialize..."\n\
+sleep 3\n\
 \n\
 # Start producer in foreground (producer will create topics)\n\
 echo "Starting weather producer (will create topics if needed)..."\n\
-python3 /app/kafka/producer.py\n\
+python3 /app/kafka_weather/producer.py\n\
 ' > /app/start-kafka-producer.sh && chmod +x /app/start-kafka-producer.sh
 
 # Start both Kafka server and producer
