@@ -156,6 +156,111 @@ REST API → HTTP Endpoints
 - ⏳ Real-time dashboard visualization - **API** (pending)
 - ⏳ Model training pipeline - **Ray** (inference implemented, training pipeline pending)
 
+## Example Outputs (from testers)
+
+The following testers can be used to verify data at each stage of the pipeline:
+
+- **`debug_consumer.py`** - Consumes and displays raw weather data from the `weather-raw` Kafka topic. Verifies that the producer is correctly fetching and publishing weather data. Shows station_id, timestamp, temperature, humidity, wind_speed, pressure, and other raw observations.
+  ```bash
+  docker exec -it kafka python3 /app/src/testers/debug_consumer.py
+  ```
+  
+  **Example Output:**
+  ```
+  Waiting for partition assignment...
+  Consumer assigned to partitions: {TopicPartition(topic='weather-raw', partition=0), TopicPartition(topic='weather-raw', partition=1), TopicPartition(topic='weather-raw', partition=2), TopicPartition(topic='weather-raw', partition=3)}
+  Starting to consume messages from topic 'weather-raw'...
+  ================================================================================
+  {'station_id': 'KMSN', 'station_name': 'Madison', 'timestamp': '2025-12-18T22:05:00+00:00', 'temperature': 33.8, 'humidity': 69.27, 'wind_speed': 20.376, 'wind_direction': 240, 'sea_level_pressure': 993.57, 'precipitation_last_hour': 0.0, 'partition': 1}
+  {'station_id': 'KMKE', 'station_name': 'Milwaukee', 'timestamp': '2025-12-18T22:05:00+00:00', 'temperature': 39.2, 'humidity': 75.17, 'wind_speed': 20.376, 'wind_direction': 250, 'sea_level_pressure': 992.89, 'precipitation_last_hour': 0.0, 'partition': 2}
+  {'station_id': 'KMDW', 'station_name': 'Chicago', 'timestamp': '2025-12-18T22:05:00+00:00', 'temperature': 39.2, 'humidity': 86.8, 'wind_speed': 18.504, 'wind_direction': 270, 'sea_level_pressure': 996.28, 'precipitation_last_hour': 0.0, 'partition': 3}
+  {'station_id': 'KMSP', 'station_name': 'Minneapolis', 'timestamp': '2025-12-18T22:00:00+00:00', 'temperature': 15.8, 'humidity': 72.74, 'wind_speed': None, 'wind_direction': None, 'sea_level_pressure': 996.28, 'precipitation_last_hour': 0.0, 'partition': 1}
+  {'station_id': 'KDSM', 'station_name': 'Des Moines', 'timestamp': '2025-12-18T22:00:00+00:00', 'temperature': 21.2, 'humidity': 62.54, 'wind_speed': 40.752, 'wind_direction': 300, 'sea_level_pressure': 1005.76, 'precipitation_last_hour': 0.0, 'partition': 3}
+  ```
+
+- **`test_spark_features.py`** - Consumes and displays aggregated weather features from the `weather-features` Kafka topic. Verifies that Spark streaming is correctly processing raw data, performing windowed aggregations (5-minute windows), and writing results. Shows temperature/humidity/pressure/wind statistics (mean, std, min, max) per window.
+  ```bash
+  docker exec -it spark-master python3 /app/src/testers/test_spark_features.py
+  ```
+  
+  **Example Output:**
+  ```
+  Waiting for partition assignment...
+  Consumer assigned to partitions: {TopicPartition(topic='weather-features', partition=0), TopicPartition(topic='weather-features', partition=1), TopicPartition(topic='weather-features', partition=2), TopicPartition(topic='weather-features', partition=3)}
+  Starting to consume aggregated features from topic 'weather-features'...
+  ================================================================================
+  ✓ Using 'earliest' offset - will show all historical messages
+    Reading from beginning of topic...
+    Assigned to 4 partition(s)
+  ================================================================================
+  Waiting for messages... (Press Ctrl+C to stop)
+  ================================================================================
+
+  Checking for existing messages in topic...
+  ✓ Found 75 message(s) in topic!
+    Starting to display messages...
+
+
+  ================================================================================
+  Message #1 | Partition 1 | Station: KMSN
+  ================================================================================
+  Window: 2025-12-18 22:01:00 to 2025-12-18 22:06:00
+  Measurements in window: 10
+
+  Temperature:
+    Mean: 33.8°F
+    Std:  0.0
+    Min:  33.8°F
+    Max:  33.8°F
+
+  Humidity:
+    Mean: 69.27000000000001%
+    Std:  0.0
+    Min:  69.27%
+    Max:  69.27%
+
+  Pressure:
+    Mean: 993.57 hPa
+    Std:  6.397515720336034e-14
+    Min:  993.57 hPa
+    Max:  993.57 hPa
+
+  Wind:
+    Speed Mean: 20.375999999999998 m/s
+    Direction:  240.0°
+
+  Precipitation:
+    Mean: 0.0 mm
+    Max:  0.0 mm
+  --------------------------------------------------------------------------------
+
+  ================================================================================
+  Message #2 | Partition 1 | Station: KMSP
+  ================================================================================
+  Window: 2025-12-18 21:58:00 to 2025-12-18 22:03:00
+  Measurements in window: 10
+
+  Temperature:
+    Mean: 15.8°F
+    Min:  72.74%
+    Max:  72.74%
+
+  Pressure:
+    Mean: 996.28 hPa
+    Std:  5.491595988356129e-14
+    Min:  996.28 hPa
+    Max:  996.28 hPa
+
+  Wind:
+    Speed Mean: 0.0 m/s
+    Direction:  0.0°
+
+  Precipitation:
+    Mean: 0.0 mm
+    Max:  0.0 mm
+  --------------------------------------------------------------------------------
+  ```
+
 ## To Do
 
 ### High Priority
