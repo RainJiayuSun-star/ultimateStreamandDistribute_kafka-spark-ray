@@ -1,0 +1,37 @@
+{
+  "model_type": "lstm_finetuned",
+  "version": "LSTM_FineTuned_20260124_193541",
+  "training_date": "2026-01-24T19:35:42.110010",
+  "pretrained_model": "models/trained/forecasting/LSTM_20260124_184927",
+  "pretrained_version": "LSTM_20260124_184927",
+  "lookback": 7,
+  "forecast_horizon": 7,
+  "features": [
+    "temperature",
+    "wind_speed",
+    "dewpoint"
+  ],
+  "target": "temperature",
+  "lstm_units": 64,
+  "num_layers": 2,
+  "dropout_rate": 0.2,
+  "fine_tuning_epochs": 30,
+  "fine_tuning_learning_rate": 0.0001,
+  "frozen_layers": false,
+  "train_metrics": {
+    "mae": 1.232173411466841,
+    "rmse": 1.5347624247359293,
+    "mape": 3.202257327974224
+  },
+  "val_metrics": {
+    "mae": 1.3467082698170731,
+    "rmse": 1.7784794138761275,
+    "mape": 2.749884421455774
+  },
+  "test_metrics": {
+    "mae": 0.910272961128049,
+    "rmse": 1.2392356668249656,
+    "mape": 3.1834789367986733
+  },
+  "note": "Fine-tuned on hourly data from pre-trained daily model. Trained on RAW features."
+}

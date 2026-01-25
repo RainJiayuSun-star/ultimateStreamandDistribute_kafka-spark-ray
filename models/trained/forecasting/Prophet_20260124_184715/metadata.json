@@ -1,0 +1,27 @@
+{
+  "model_type": "prophet",
+  "version": "Prophet_20260124_184715",
+  "training_date": "2026-01-24T18:47:15.557422",
+  "target": "temp_max",
+  "forecast_days": 365,
+  "yearly_seasonality": true,
+  "weekly_seasonality": true,
+  "seasonality_mode": "multiplicative",
+  "changepoint_prior_scale": 0.05,
+  "train_metrics": {
+    "mae": 4.152077226377323,
+    "rmse": 5.29894133463779,
+    "mape": 69.36679765158352
+  },
+  "val_metrics": {
+    "mae": 4.2520699961626685,
+    "rmse": 5.438331677221524,
+    "mape": 60.19387745274455
+  },
+  "test_metrics": {
+    "mae": 6.798589846964056,
+    "rmse": 8.492625983824967,
+    "mape": 91.88153970268459
+  },
+  "training_samples": 10615
+}

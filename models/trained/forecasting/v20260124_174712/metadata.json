@@ -1,0 +1,61 @@
+{
+  "model_type": "xgboost",
+  "version": "v20260124_174712",
+  "training_date": "2026-01-24T17:47:12.865008",
+  "target": "temp_max",
+  "n_estimators": 100,
+  "max_depth": 6,
+  "learning_rate": 0.1,
+  "subsample": 0.8,
+  "colsample_bytree": 0.8,
+  "features": [
+    "temp_min",
+    "temp_max_lag_1",
+    "temp_max_rolling_std_7",
+    "temp_avg",
+    "day_of_year",
+    "temp_max",
+    "year",
+    "precipitation",
+    "temp_max_rolling_mean_7",
+    "day_of_week",
+    "month",
+    "temp_max_lag_3",
+    "temp_max_lag_7",
+    "wind_avg",
+    "temperature"
+  ],
+  "feature_importance": {
+    "temp_min": 0.0064195869490504265,
+    "temp_max_lag_1": 0.004812785889953375,
+    "temp_max_rolling_std_7": 0.004398777149617672,
+    "temp_avg": 0.19110600650310516,
+    "day_of_year": 0.010027002543210983,
+    "temp_max": 0.6383518576622009,
+    "year": 0.004289807751774788,
+    "precipitation": 0.010099710896611214,
+    "temp_max_rolling_mean_7": 0.01423864159733057,
+    "day_of_week": 0.004066080786287785,
+    "month": 0.017577162012457848,
+    "temp_max_lag_3": 0.005585779435932636,
+    "temp_max_lag_7": 0.007205228786915541,
+    "wind_avg": 0.007922597229480743,
+    "temperature": 0.07389894872903824
+  },
+  "train_metrics": {
+    "mae": 2.1738735574450656,
+    "rmse": 2.8028533880688835,
+    "mape": 38.22362952002275
+  },
+  "val_metrics": {
+    "mae": 2.951188642699283,
+    "rmse": 3.793182073952375,
+    "mape": 57.484665475853525
+  },
+  "test_metrics": {
+    "mae": 3.104174883649848,
+    "rmse": 4.021477751543125,
+    "mape": 52.67090742158157
+  },
+  "note": "Trained on RAW features. Use feature_adapter.pkl to convert Spark aggregated features at inference."
+}
