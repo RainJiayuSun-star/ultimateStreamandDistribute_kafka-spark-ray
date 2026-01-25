@@ -17,6 +17,11 @@ Deployment will be done on a single VM via Docker Compose. The cluster will cons
 4. ray-head: manages the ML actors and serves the Ray Dashboard
 5. ray-worker: executes the training/inference actors.
 
+Commands:
+```
+
+```
+
 ## Communication Mechanisms
 - not decided yet
 

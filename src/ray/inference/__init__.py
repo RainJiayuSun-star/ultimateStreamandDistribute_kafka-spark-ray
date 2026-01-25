@@ -1,2 +1,0 @@
-# Ray inference pipeline module
-
