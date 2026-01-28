@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Row, Col, Card, Spinner, Alert } from 'react-bootstrap'
-import PredictionCards from '../components/PredictionCards'
-import TimeSeriesChart from '../components/TimeSeriesChart'
+import { Row, Col, Spinner, Alert } from 'react-bootstrap'
 import SystemMetrics from '../components/SystemMetrics'
 import KafkaTopicSection from '../components/KafkaTopicSection'
 import StationDataList from '../components/StationDataList'
@@ -193,27 +191,6 @@ function Dashboard() {
           <SystemHealthAndPipeline />
         </Col>
       </Row>
-
-      <Row className="mb-3">
-        <Col md={12}>
-          <PredictionCards predictions={predictions} loading={loading} />
-        </Col>
-      </Row>
-
-      {predictions.length > 0 && (
-        <Row>
-          <Col md={12}>
-            <Card className="bg-dark text-light">
-              <Card.Header>
-                <div className="section-title">24-Hour Forecast Horizon</div>
-              </Card.Header>
-              <Card.Body>
-                <TimeSeriesChart predictions={predictions} />
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      )}
     </div>
   )
 }
