@@ -1,0 +1,34 @@
+{
+  "model_type": "lstm",
+  "version": "LSTM_20260124_184927",
+  "training_date": "2026-01-24T18:49:27.654988",
+  "lookback": 7,
+  "forecast_horizon": 7,
+  "features": [
+    "temperature",
+    "wind_avg",
+    "precipitation"
+  ],
+  "target": "temperature",
+  "lstm_units": 64,
+  "num_layers": 2,
+  "dropout_rate": 0.2,
+  "epochs": 50,
+  "batch_size": 32,
+  "train_metrics": {
+    "mae": 3.7778156537574725,
+    "rmse": 4.849900635315788,
+    "mape": 91.26574685050198
+  },
+  "val_metrics": {
+    "mae": 3.6714307825134767,
+    "rmse": 4.7629818879071015,
+    "mape": 120.8457642872731
+  },
+  "test_metrics": {
+    "mae": 3.83871088453541,
+    "rmse": 4.975568285911666,
+    "mape": 138.0097260070038
+  },
+  "note": "Trained on RAW features. Use feature_adapter.pkl to convert Spark aggregated features at inference."
+}

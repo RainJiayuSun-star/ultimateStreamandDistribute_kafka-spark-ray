@@ -62,10 +62,14 @@ try:
             forecast = prediction_data.get('forecast', {})
             if forecast:
                 predictions = forecast.get('temperature_predictions', [])
-                print(f"\nTemperature Forecast (next {forecast.get('horizon_hours', 24)} hours):")
+                horizon = forecast.get('horizon_hours', 7)
+                print(f"\nTemperature Forecast (next {horizon} hours):")
                 if predictions:
-                    print(f"  First 6 hours: {[round(p, 1) for p in predictions[:6]]}")
-                    print(f"  Average: {round(sum(predictions) / len(predictions), 1)}°F")
+                    print(f"  First 6 hours: {[round(p, 1) for p in predictions[:6]]} °C")
+                    if len(predictions) > 6:
+                        rest = predictions[6:]
+                        print(f"  Hours 7-{horizon} avg: {round(sum(rest) / len(rest), 1)} °C")
+                    print(f"  Overall average: {round(sum(predictions) / len(predictions), 1)} °C")
             
             # Anomaly information
             anomaly = prediction_data.get('anomaly', {})

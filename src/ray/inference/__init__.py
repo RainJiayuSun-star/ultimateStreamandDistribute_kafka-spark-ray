@@ -1,2 +1,4 @@
-# Ray inference pipeline module
+"""
+Ray inference package for ML inference pipeline.
+"""
 

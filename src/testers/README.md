@@ -46,6 +46,165 @@ Starting to consume messages from topic 'weather-raw'...
 
 ---
 
+### 3. `test_ray_inference.py` - Ray ML Inference Tester
+
+**Purpose:** Tests the Ray ML inference pipeline by consuming aggregated features from `weather-features` topic, performing ML inference using Ray actors, and displaying predictions. This verifies that the entire inference pipeline is working correctly.
+
+**What it does:**
+- Connects to Ray cluster
+- Creates Ray inference actors with loaded LSTM models
+- Consumes aggregated features from `weather-features` topic
+- Performs ML inference on each message
+- Displays formatted predictions showing:
+  - Input features (from Spark)
+  - Temperature forecasts (next 12-24 hours)
+  - Forecast statistics (average, range, trends)
+  - Inference timing information
+
+**Prerequisites:**
+- Ray cluster must be running (ray-head and ray-workers)
+- Kafka container must be running
+- Spark streaming must be producing to `weather-features` topic
+- LSTM model must exist at `/app/models/trained/forecasting/LSTM_FineTuned_20260124_193541/`
+- GPU support (optional but recommended for performance)
+
+**How to Run:**
+
+**Option A: Run in Docker (Recommended)**
+```bash
+docker exec -it ray-head python3 /app/src/testers/test_ray_inference.py
+```
+
+**Option B: Run Locally (if Ray and Kafka are accessible from host)**
+```bash
+python3 src/testers/test_ray_inference.py
+```
+
+**Expected Output:**
+```
+================================================================================
+Ray ML Inference Pipeline Tester
+================================================================================
+Kafka Broker: kafka:9092
+Topic: weather-features
+Model: LSTM_FineTuned_20260124_193541
+Ray Address: ray-head:6379
+GPU Enabled: True
+================================================================================
+Connecting to Ray cluster at ray-head:6379...
+✓ Connected to Ray cluster
+
+Creating 2 inference actors...
+  Creating actor 1/2... ✓ (Model loaded: LSTM_FineTuned_20260124_193541)
+  Creating actor 2/2... ✓ (Model loaded: LSTM_FineTuned_20260124_193541)
+✓ Successfully created 2 inference actors
+
+Initializing Kafka consumer for topic 'weather-features'...
+✓ Kafka consumer initialized
+
+Waiting for partition assignment...
+✓ Assigned to partitions: {TopicPartition(topic='weather-features', partition=0), ...}
+✓ Using 'earliest' offset - will show all historical messages
+✓ Found 75 message(s) in topic
+
+================================================================================
+Starting inference testing...
+Press Ctrl+C to stop
+================================================================================
+
+================================================================================
+Station: KMSN
+Inference Time: 45.2ms
+================================================================================
+
+📥 Input Features (from Spark):
+  Window: 2025-12-18 22:01:00 to 2025-12-18 22:06:00
+  Measurements: 10
+  Temperature Mean: 33.8°F
+  Humidity Mean: 69.27%
+  Pressure Mean: 993.57 hPa
+  Wind Speed Mean: 20.38 m/s
+
+📤 Temperature Forecast (next 7 hours):
+  Next 12 hours:
+    +1h:   34.2°F
+    +2h:   34.5°F
+    +3h:   34.8°F
+    +4h:   35.1°F
+    +5h:   35.3°F
+    +6h:   35.5°F
+    +7h:   35.7°F
+
+  Forecast Statistics:
+    Average: 35.1°F
+    Range: 34.2°F to 35.7°F
+    Current → +1h: 33.8°F → 34.2°F
+--------------------------------------------------------------------------------
+
+[Progress] Processed 5 messages | Avg inference: 42.3ms
+```
+
+**Configuration Options:**
+
+You can modify these variables in the script:
+- `OFFSET_STRATEGY`: `'earliest'` (all messages) or `'latest'` (new messages only)
+- `MODEL_NAME`: Model directory name (default: `'LSTM_FineTuned_20260124_193541'`)
+- `NUM_ACTORS`: Number of inference actors to create (default: `2`)
+- `USE_GPU`: Enable GPU acceleration (default: `True`)
+
+**Troubleshooting:**
+
+**Ray Connection Failed:**
+```
+✗ Failed to connect to Ray cluster
+```
+- Check Ray head is running: `docker ps | grep ray-head`
+- Check Ray logs: `docker logs ray-head`
+- Verify network: `docker exec ray-head ping ray-head`
+
+**Model Not Found:**
+```
+✗ Failed to create actors: FileNotFoundError: Model directory not found
+```
+- Verify model exists: `docker exec ray-head ls -la /app/models/trained/forecasting/`
+- Check model path: Should be `/app/models/trained/forecasting/LSTM_FineTuned_20260124_193541/`
+
+**GPU Not Available:**
+```
+No GPU devices found, using CPU
+```
+- Check GPU access: `docker exec ray-head nvidia-smi`
+- Verify NVIDIA Container Toolkit is installed
+- GPU is optional - inference will work on CPU (slower)
+
+**No Messages:**
+```
+⚠ No messages found in topic yet
+```
+- Check Spark is producing: `docker ps | grep spark-streaming`
+- Wait 1-2 minutes for Spark to process first batch
+- Check topic has messages:
+  ```bash
+  docker exec kafka /kafka_2.12-3.6.2/bin/kafka-run-class.sh \
+    kafka.tools.GetOffsetShell \
+    --broker-list localhost:9092 \
+    --topic weather-features
+  ```
+
+**Inference Timeout:**
+```
+⚠ Inference timeout for message
+```
+- Model may be loading slowly (first inference takes longer)
+- Check GPU memory: `docker exec ray-head nvidia-smi`
+- Check Ray actor logs in Ray Dashboard: `http://localhost:8265`
+
+**To Stop:** Press `Ctrl+C`
+
+---
+
+### 4. `test_ray_predictions.py` - Ray Predictions Output Consumer
+
 ### 2. `test_spark_features.py` - Spark Aggregated Features Consumer
 
 **Purpose:** Consumes and displays aggregated weather features from the `weather-features` Kafka topic. This verifies that Spark streaming is correctly processing raw data, performing windowed aggregations, and writing results to Kafka.
@@ -133,7 +292,7 @@ To verify the entire pipeline is working:
    # First, ensure Spark streaming is running:
    docker exec -d spark-master spark-submit \
      --master spark://spark-master:7077 \
-     --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7 \
+     --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 \
      /app/src/spark/streaming_app.py
    
    # Wait 1-2 minutes for Spark to process first batch
@@ -141,6 +300,23 @@ To verify the entire pipeline is working:
    docker exec -it spark-master python3 /app/src/testers/test_spark_features.py
    ```
    You should see aggregated features with statistics.
+
+3. **Check Ray Inference (ML Predictions):**
+   ```bash
+   # Ensure Ray inference consumer is running (or test directly):
+   docker exec -it ray-head python3 /app/src/testers/test_ray_inference.py
+   ```
+   You should see:
+   - Ray actors being created and models loaded
+   - Input features from Spark
+   - Temperature forecasts (next 12-24 hours)
+   - Inference timing information
+
+4. **Check Final Output (Predictions Topic):**
+   ```bash
+   docker exec -it ray-head python3 /app/src/testers/test_ray_predictions.py
+   ```
+   You should see predictions published to `weather-predictions` topic.
 
 ---
 
@@ -263,7 +439,7 @@ docker exec kafka /kafka_2.12-3.6.2/bin/kafka-console-consumer.sh \
 
 ---
 
-### 3. `test_data_collector.py` - Data Collector Verification
+### 5. `test_data_collector.py` - Data Collector Verification
 
 **Purpose:** Verifies that the Kafka data collector is working correctly and saving files as expected.
 

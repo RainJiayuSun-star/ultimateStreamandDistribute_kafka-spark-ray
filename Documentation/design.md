@@ -17,6 +17,74 @@ Deployment will be done on a single VM via Docker Compose. The cluster will cons
 4. ray-head: manages the ML actors and serves the Ray Dashboard
 5. ray-worker: executes the training/inference actors.
 
+### Commands:
+To see the Topic Contents
+#### Method 1: Use existing tester scripts
+View weather-raw topic: 
+```
+# In Docker
+docker exec -it kafka python3 /app/src/testers/debug_consumer.py
+
+# Or locally (if Kafka accessible from host)
+python3 src/testers/debug_consumer.py
+```
+---
+View weather-feature topic: 
+```
+# In Docker
+docker exec -it spark-master python3 /app/src/testers/test_spark_features.py
+
+# Or locally
+python3 src/testers/test_spark_features.py
+```
+---
+View weather-predictions topic:
+```
+# In Docker
+docker exec -it kafka python3 /app/src/testers/test_ray_predictions.py
+
+# Or locally
+python3 src/testers/test_ray_predictions.py
+```
+
+#### Method 1: Use Kafka console consumer (raw messages)
+View messages from beginning
+```
+# weather-raw topic
+docker exec -it kafka /kafka_2.12-3.6.2/bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic weather-raw \
+  --from-beginning
+
+# weather-features topic
+docker exec -it kafka /kafka_2.12-3.6.2/bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic weather-features \
+  --from-beginning
+
+# weather-predictions topic
+docker exec -it kafka /kafka_2.12-3.6.2/bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic weather-predictions \
+  --from-beginning
+```
+View only new messages (latest):
+```
+# Remove --from-beginning flag
+docker exec -it kafka /kafka_2.12-3.6.2/bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic weather-raw
+```
+View limited number of messages:
+```
+# View only 5 messages
+docker exec -it kafka /kafka_2.12-3.6.2/bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic weather-raw \
+  --from-beginning \
+  --max-messages 5
+```
+
 ## Communication Mechanisms
 - not decided yet
 

@@ -1,0 +1,29 @@
+{
+  "model_type": "xgboost",
+  "version": "v20260124_174635",
+  "training_date": "2026-01-24T17:46:35.125821",
+  "target": "temp_max",
+  "n_estimators": 100,
+  "max_depth": 6,
+  "learning_rate": 0.1,
+  "subsample": 0.8,
+  "colsample_bytree": 0.8,
+  "features": [
+    "temp_max_lag_1",
+    "year",
+    "temp_max",
+    "temp_min",
+    "precipitation",
+    "temp_max_lag_3",
+    "temp_max_rolling_mean_7",
+    "temp_max_rolling_std_7",
+    "temperature",
+    "day_of_year",
+    "month",
+    "temp_avg",
+    "day_of_week",
+    "wind_avg",
+    "temp_max_lag_7"
+  ],
+  "feature_importance": {
+    "temp_max_lag_1": 
