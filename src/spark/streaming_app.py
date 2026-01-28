@@ -58,7 +58,7 @@ def create_spark_session() -> SparkSession:
     """
     spark = SparkSession.builder \
         .appName("WeatherStreamingApp") \
-        .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7") \
+        .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0") \
         .config("spark.sql.streaming.checkpointLocation", SPARK_CHECKPOINT_LOCATION) \
         .config("spark.sql.streaming.schemaInference", "true") \
         .config("spark.sql.adaptive.enabled", "true") \

@@ -77,9 +77,11 @@ def format_weather_data(station_id: str, station_name: str, raw_obs: dict) -> di
     if not raw_obs:
         return {}
     
-    # Temperature: Celsius to Fahrenheit
+    # Temperature: Keep in Celsius (metric) - model was trained on Celsius
+    # DO NOT convert to Fahrenheit - the LSTM model expects Celsius
     temp_c = raw_obs.get('temperature', {}).get('value')
-    temp_f = round((temp_c * 9/5) + 32, 1) if temp_c is not None else None
+    # Store as temperature (Celsius) - model expects metric units
+    temperature = round(temp_c, 1) if temp_c is not None else None
     
     # Pressure: Pascals to hectopascals
     pressure_pa = raw_obs.get('barometricPressure', {}).get('value')
@@ -98,9 +100,9 @@ def format_weather_data(station_id: str, station_name: str, raw_obs: dict) -> di
         "station_id": station_id,
         "station_name": station_name,
         "timestamp": raw_obs.get('timestamp', datetime.utcnow().isoformat()),
-        "temperature": temp_f,
+        "temperature": temperature,  # Celsius (metric) - matches model training
         "humidity": round(humidity, 2) if humidity is not None else None,
-        "wind_speed": wind_speed,
+        "wind_speed": wind_speed,  # m/s (metric) - matches model training
         "wind_direction": wind_direction,
         "sea_level_pressure": pressure_hpa,
         "precipitation_last_hour": precipitation,
