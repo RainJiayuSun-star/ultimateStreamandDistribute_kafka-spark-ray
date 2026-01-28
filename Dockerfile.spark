@@ -18,18 +18,19 @@ ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 ENV PATH="${PATH}:${JAVA_HOME}/bin"
 
 # Download and extract Spark
-RUN wget https://dlcdn.apache.org/spark/spark-3.5.7/spark-3.5.7-bin-hadoop3.tgz && \
-    tar -xf spark-3.5.7-bin-hadoop3.tgz && \
-    rm spark-3.5.7-bin-hadoop3.tgz
+# Using Spark 3.5.0 (stable version available on archive.apache.org)
+RUN wget https://archive.apache.org/dist/spark/spark-3.5.0/spark-3.5.0-bin-hadoop3.tgz && \
+    tar -xf spark-3.5.0-bin-hadoop3.tgz && \
+    rm spark-3.5.0-bin-hadoop3.tgz
 
 # Set Spark environment variables
-ENV SPARK_HOME=/spark-3.5.7-bin-hadoop3
+ENV SPARK_HOME=/spark-3.5.0-bin-hadoop3
 ENV PATH="${PATH}:${SPARK_HOME}/bin:${SPARK_HOME}/sbin"
 
 # Install Python dependencies for Spark streaming
 RUN pip3 install --no-cache-dir \
     kafka-python==2.0.2 \
-    pyspark==3.5.7
+    pyspark==3.5.0
 
 # Create directory for application code
 WORKDIR /app

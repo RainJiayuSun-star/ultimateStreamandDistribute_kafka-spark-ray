@@ -51,13 +51,13 @@ from kafka import KafkaAdminClient\n\
 from kafka.errors import NoBrokersAvailable\n\
 \n\
 broker = "localhost:9092"\n\
-max_retries = 60\n\
+max_retries = 90\n\
 retry_count = 0\n\
 \n\
 print("Waiting for Kafka to be ready...")\n\
 while retry_count < max_retries:\n\
     try:\n\
-        admin_client = KafkaAdminClient(bootstrap_servers=[broker], request_timeout_ms=2000)\n\
+        admin_client = KafkaAdminClient(bootstrap_servers=[broker], request_timeout_ms=3000)\n\
         admin_client.list_topics()\n\
         print("Kafka is ready and accepting connections!")\n\
         sys.exit(0)\n\
@@ -77,14 +77,49 @@ while retry_count < max_retries:\n\
             sys.exit(1)\n\
 ' > /app/wait-for-kafka.py && chmod +x /app/wait-for-kafka.py
 
+# Create Python script to fix advertised.listeners config
+RUN echo '#!/usr/bin/env python3\n\
+import re\n\
+import sys\n\
+\n\
+config_file = "/kafka_2.12-3.6.2/config/kraft/server.properties"\n\
+target_value = "advertised.listeners=PLAINTEXT://kafka:9092"\n\
+\n\
+try:\n\
+    with open(config_file, "r") as f:\n\
+        lines = f.readlines()\n\
+    \n\
+    # Replace existing advertised.listeners line or append if missing\n\
+    found = False\n\
+    new_lines = []\n\
+    for line in lines:\n\
+        if re.match(r"^advertised.listeners=", line.strip()):\n\
+            new_lines.append(target_value + "\\n")\n\
+            found = True\n\
+        else:\n\
+            new_lines.append(line)\n\
+    \n\
+    if not found:\n\
+        new_lines.append(target_value + "\\n")\n\
+    \n\
+    with open(config_file, "w") as f:\n\
+        f.writelines(new_lines)\n\
+    \n\
+    print(f"Set {target_value} in {config_file}")\n\
+    sys.exit(0)\n\
+except Exception as e:\n\
+    print(f"ERROR: Failed to update config: {e}", file=sys.stderr)\n\
+    sys.exit(1)\n\
+' > /app/fix-kafka-config.py && chmod +x /app/fix-kafka-config.py
+
 # Create startup script that runs both Kafka and Producer
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
-# Configure Kafka advertised listeners for Docker network\n\
+# Force advertised.listeners to kafka:9092 using Python script\n\
 cd /kafka_2.12-3.6.2 && \\\n\
-echo "advertised.listeners=PLAINTEXT://kafka:9092" >> config/kraft/server.properties && \\\n\
-bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties && \\\n\
+python3 /app/fix-kafka-config.py && \\\n\
+bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties --ignore-formatted && \\\n\
 bin/kafka-server-start.sh config/kraft/server.properties &\n\
 KAFKA_PID=$!\n\
 \n\

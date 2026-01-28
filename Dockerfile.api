@@ -17,17 +17,17 @@ RUN pip3 install --no-cache-dir \
 # Create directory for application code
 WORKDIR /app
 
-# Copy API code
-COPY src/api/ /app/api/
-COPY src/kafka_weather/ /app/kafka_weather/
-COPY src/utils/ /app/utils/
+# Copy application code to /app/src
+# Note: Volume mounts in docker-compose will override this, but it's here for standalone builds
+COPY src/ /app/src/
 
 # Set Python path
-ENV PYTHONPATH=/app:$PYTHONPATH
+ENV PYTHONPATH=/app/src:$PYTHONPATH
 
 # Expose API port
 EXPOSE 5000
 
 # Run API
-CMD ["python3", "/app/api/app.py"]
+# Note: docker-compose.yml overrides this command, but keeping it correct for standalone builds
+CMD ["python3", "/app/src/api/app.py"]
 

@@ -59,7 +59,7 @@ cd /app
 
 spark-submit \
     --master spark://spark-master:7077 \
-    --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7 \
+    --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 \
     --conf "spark.sql.streaming.checkpointLocation=/app/checkpoints/spark" \
     --conf "spark.sql.streaming.stopGracefullyOnShutdown=true" \
     --driver-memory 1g \

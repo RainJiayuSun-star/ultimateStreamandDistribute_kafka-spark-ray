@@ -1,24 +1,43 @@
-FROM rayproject/ray:latest
+# Use Python base image and install Ray explicitly
+# Using Python 3.9 to avoid Ray 2.8.0 enum compatibility issue with Python 3.10
+FROM python:3.9-slim
 
-# Install Python dependencies for Ray
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Ray and dependencies
+# Note: Using Ray 2.9.0 which fixes the enum/Sentinel issue with Python 3.10
+# Using Python 3.9 for better compatibility
 RUN pip install --no-cache-dir \
+    ray[default]==2.9.0 \
     kafka-python==2.0.2 \
     numpy==1.24.3 \
     pandas==2.1.1 \
     scikit-learn==1.3.2 \
-    torch==2.1.0 \
+    tensorflow==2.15.0 \
     requests==2.31.0
+
+# Verify Ray installation
+RUN python3 -c "import ray; print(f'Ray version: {ray.__version__}')" || (echo "Ray installation failed!" && exit 1)
 
 # Create directory for application code
 WORKDIR /app
 
-# Copy Ray application code
-COPY src/ray/ /app/ray/
-COPY src/kafka_weather/ /app/kafka_weather/
-COPY src/utils/ /app/utils/
+# Remove any existing /app/ray directory that might conflict with Ray package
+RUN rm -rf /app/ray 2>/dev/null || true
 
-# Set Python path
-ENV PYTHONPATH=/app:$PYTHONPATH
+# Copy application code to /app/src to avoid naming conflict with ray package
+# DO NOT copy to /app/ray/ as it will shadow the ray Python package
+COPY src/ /app/src/
+
+# DO NOT set PYTHONPATH to include /app/src here - it would shadow the Ray package
+# The Python code will dynamically add /app/src to sys.path AFTER importing Ray
+# This ensures the installed Ray package is found, not the local /app/src/ray/ directory
+# ENV PYTHONPATH=/app/src  # Commented out to prevent Ray package shadowing
 
 # Expose Ray dashboard port
 EXPOSE 8265
