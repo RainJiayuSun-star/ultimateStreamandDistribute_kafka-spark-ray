@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project Showcase — Ultimate Stream and Distribute</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Project Showcase</h1>
+    <p class="subtitle">Ultimate Stream and Distribute — Lambda Architecture for Real-Time Weather Forecasting</p>
+
+    <section class="section">
+      <h2>Project Overview</h2>
+      <p>
+        UW Madison Fall 2025 <strong>Big Data Systems (CS 544)</strong> independent honors project. This system implements a
+        <strong>Lambda Architecture</strong> for real-time weather forecasting, integrating three distributed systems:
+        <code>Kafka</code>, <code>Spark</code>, and <code>Ray</code>.
+      </p>
+      <p>
+        Raw weather data is ingested from multiple stations, processed through Spark streaming for feature aggregation,
+        and passed to Ray for ML inference (forecasting and anomaly detection). The architecture demonstrates a reusable
+        pattern for real-time stream processing and distributed ML that can be applied to IoT, finance, and other domains.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>Detailed System Architecture</h2>
+      <p class="muted" style="margin-bottom: 1rem;">End-to-end data flow from ingestion to serving.</p>
+
+      <div class="flow-block block-1">
+        <h3>[1] Data Ingestion</h3>
+        <div class="meta">Open-Meteo API → Kafka Producer</div>
+        <div class="desc">
+          Weather data fetched every 15s from multiple stations (Madison, Milwaukee, Chicago, Minneapolis, Des Moines).
+          Published to <code>weather-raw</code> (4 partitions). Schema: station_id, timestamp, temperature, humidity,
+          wind_speed, sea_level_pressure.
+        </div>
+      </div>
+      <div class="flow-arrow">↓</div>
+
+      <div class="flow-block block-2">
+        <h3>[2] Stream Processing (Spark)</h3>
+        <div class="meta">Spark Structured Streaming</div>
+        <div class="desc">
+          Consumes <code>weather-raw</code>. Sliding windows: 5-minute window, 1-minute slide. Aggregations: mean, std,
+          min, max per window. Writes to <code>weather-features</code> (4 partitions). Cluster: 1 Master + 4 Workers.
+          Checkpointing enabled for fault tolerance.
+        </div>
+      </div>
+      <div class="flow-arrow">↓</div>
+
+      <div class="flow-block block-3">
+        <h3>[3] ML Inference (Ray)</h3>
+        <div class="meta">Ray distributed actors</div>
+        <div class="desc">
+          Consumes <code>weather-features</code>. Time series forecasting (24h horizon), anomaly detection. LSTM-based
+          forecasting model. Writes to <code>weather-predictions</code> (4 partitions). Cluster: 1 Head + 4 Workers.
+          Parallel inference execution.
+        </div>
+      </div>
+      <div class="flow-arrow">↓</div>
+
+      <div class="flow-block block-4">
+        <h3>[4] Serving Layer</h3>
+        <div class="meta">REST API + Dashboard</div>
+        <div class="desc">
+          Consumes <code>weather-predictions</code>. Endpoints: <code>/health</code>, <code>/predictions/latest</code>,
+          <code>/predictions</code>, <code>/stations/all</code>, <code>/topics/*</code>. React dashboard for real-time
+          visualization (metrics, Kafka topics, station data, charts).
+        </div>
+      </div>
+    </section>
+
+    <div class="two-col">
+      <section class="section">
+        <h2>Tech Stack</h2>
+        <ul style="margin:0; padding-left: 1.2rem; color: var(--muted); font-size: 0.95rem;">
+          <li><strong style="color: var(--text);">Kafka</strong> — Message queuing, topic-based decoupling</li>
+          <li><strong style="color: var(--text);">Apache Spark</strong> — Structured Streaming, window aggregations</li>
+          <li><strong style="color: var(--text);">Ray</strong> — Distributed ML inference, actors</li>
+          <li><strong style="color: var(--text);">Python</strong> — Kafka / Spark / Ray / API implementation</li>
+          <li><strong style="color: var(--text);">Flask</strong> — REST API</li>
+          <li><strong style="color: var(--text);">React + Vite + TypeScript</strong> — Dashboard frontend</li>
+          <li><strong style="color: var(--text);">Docker Compose</strong> — Orchestration, 14 containers</li>
+        </ul>
+      </section>
+      <section class="section">
+        <h2>Resource Allocation</h2>
+        <table>
+          <tr><td>Kafka Broker</td><td><code>1</code></td></tr>
+          <tr><td>Spark Master</td><td><code>1</code></td></tr>
+          <tr><td>Spark Workers</td><td><code>4</code></td></tr>
+          <tr><td>Ray Head</td><td><code>1</code></td></tr>
+          <tr><td>Ray Workers</td><td><code>4</code></td></tr>
+          <tr><td>API + Data Collector</td><td><code>2</code></td></tr>
+          <tr><td><strong>Total containers</strong></td><td><code>14</code></td></tr>
+          <tr><td>Total CPU</td><td><code>13.5</code> cores</td></tr>
+          <tr><td>Total RAM</td><td><code>35 GB</code></td></tr>
+          <tr><td>Kafka topics</td><td><code>3</code> (4 partitions each)</td></tr>
+        </table>
+      </section>
+    </div>
+
+    <div class="two-col">
+      <section class="section">
+        <h2>Data Sources</h2>
+        <p>
+          <strong>Live:</strong> Open-Meteo API — free weather API. Fetches every 15s for multiple US stations
+          (e.g. KMSN, KMKE, KMDW, KMSP, KDSM).
+        </p>
+        <p style="margin-bottom: 0;">
+          <strong>Historical:</strong> Kaggle “Historical Hourly Weather Data 2012–2017” used for model training
+          (Ray training pipeline).
+        </p>
+      </section>
+      <section class="section">
+        <h2>ML Models</h2>
+        <p>
+          <strong>Forecasting:</strong> LSTM-based time series model. 24-hour horizon. Trained on historical data;
+          served by Ray inference actors.
+        </p>
+        <p style="margin-bottom: 0;">
+          <strong>Anomaly detection:</strong> Statistical / ML-based detection on streaming features; anomaly flags
+          and scores published to <code>weather-predictions</code>.
+        </p>
+      </section>
+    </div>
+
+    <section class="section">
+      <h2>Service Endpoints</h2>
+      <table>
+        <thead>
+          <tr><th>Service</th><th>URL</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Dashboard</code></td>
+            <td><code>http://localhost:5173</code></td>
+            <td>Real-time metrics, Kafka topics, station data, charts</td>
+          </tr>
+          <tr>
+            <td><code>REST API</code></td>
+            <td><code>http://localhost:5000</code></td>
+            <td>Predictions, health, topics, stations</td>
+          </tr>
+          <tr>
+            <td><code>Spark Master UI</code></td>
+            <td><code>http://localhost:8080</code></td>
+            <td>Cluster and streaming job monitoring</td>
+          </tr>
+          <tr>
+            <td><code>Ray Dashboard</code></td>
+            <td><code>http://localhost:8265</code></td>
+            <td>Actors and tasks</td>
+          </tr>
+          <tr>
+            <td><code>Kafka</code></td>
+            <td><code>localhost:9092</code></td>
+            <td>Broker (internal)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>References</h2>
+      <p class="muted" style="margin-bottom: 1rem;">Data sources, APIs, frameworks, and architecture.</p>
+      <ul class="refs">
+        <li>
+          <strong>Open-Meteo API</strong> — Free weather API.
+          <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">https://open-meteo.com/</a>
+        </li>
+        <li>
+          <strong>Kaggle: Historical Hourly Weather Data 2012–2017</strong> — Training data.
+          <a href="https://www.kaggle.com/datasets/selfishgene/historical-hourly-weather-data" target="_blank" rel="noopener noreferrer">Kaggle dataset</a>
+        </li>
+        <li>
+          <strong>Lambda Architecture</strong> — Batch + speed + serving layers.
+          <a href="https://www.geeksforgeeks.org/system-design/what-is-lambda-architecture-system-design/" target="_blank" rel="noopener noreferrer">GeeksforGeeks: Lambda Architecture</a>
+        </li>
+        <li>
+          <strong>Apache Kafka</strong> — Distributed event streaming.
+          <a href="https://kafka.apache.org/" target="_blank" rel="noopener noreferrer">https://kafka.apache.org/</a>
+        </li>
+        <li>
+          <strong>Apache Spark — Structured Streaming</strong> — Stream processing.
+          <a href="https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html" target="_blank" rel="noopener noreferrer">Spark Structured Streaming Guide</a>
+        </li>
+        <li>
+          <strong>Ray</strong> — Distributed Python for ML.
+          <a href="https://www.ray.io/" target="_blank" rel="noopener noreferrer">https://www.ray.io/</a>
+        </li>
+        <li>
+          <strong>Docker</strong> — Containerization.
+          <a href="https://www.docker.com/" target="_blank" rel="noopener noreferrer">https://www.docker.com/</a>
+        </li>
+        <li>
+          <strong>React</strong> — UI library.
+          <a href="https://react.dev/" target="_blank" rel="noopener noreferrer">https://react.dev/</a>
+        </li>
+        <li>
+          <strong>Recharts</strong> — Charts.
+          <a href="https://recharts.org/" target="_blank" rel="noopener noreferrer">https://recharts.org/</a>
+        </li>
+        <li>
+          <strong>UW–Madison CS 544 (Big Data Systems)</strong> — Course context for this project.
+        </li>
+      </ul>
+    </section>
+
+    <p class="footer">
+      Ultimate Stream and Distribute — Kafka → Spark → Ray | UW Madison CS 544
+    </p>
+  </div>
+</body>
+</html>
