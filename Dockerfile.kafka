@@ -18,7 +18,10 @@ ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 RUN pip3 install --no-cache-dir \
     kafka-python==2.0.2 \
     requests==2.31.0 \
-    python-dotenv==1.0.0
+    python-dotenv==1.0.0 \
+    matplotlib>=3.5.0 \
+    seaborn>=0.12.0 \
+    numpy>=1.21.0
 
 # Download and install Kafka (KRaft mode - no Zookeeper needed)
 RUN wget https://archive.apache.org/dist/kafka/3.6.2/kafka_2.12-3.6.2.tgz && \
