@@ -8,8 +8,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Project Showcase</h1>
-    <p class="subtitle">Ultimate Stream and Distribute — Lambda Architecture for Real-Time Weather Forecasting</p>
+    <h1>Ultimate Stream and Distribute — Lambda Architecture for Real-Time Weather Forecasting</h1>
 
     <section class="section">
       <h2>Project Overview</h2>
@@ -31,10 +30,10 @@
 
       <div class="flow-block block-1">
         <h3>[1] Data Ingestion</h3>
-        <div class="meta">Open-Meteo API → Kafka Producer</div>
+        <div class="meta">NOAA & National Weather Service API → Kafka Producer</div>
         <div class="desc">
-          Weather data fetched every 15s from multiple stations (Madison, Milwaukee, Chicago, Minneapolis, Des Moines).
-          Published to <code>weather-raw</code> (4 partitions). Schema: station_id, timestamp, temperature, humidity,
+          Real-time weather data fetched every 15s from multiple stations (Madison, Milwaukee, Chicago, Minneapolis, Des Moines).
+          Only 5 stations are selected for showing the architecture. Published to <code>weather-raw</code> (4 partitions). Schema: station_id, timestamp, temperature, humidity,
           wind_speed, sea_level_pressure.
         </div>
       </div>
@@ -165,16 +164,39 @@
     </section>
 
     <section class="section">
+      <h2>Demo Video</h2>
+      <p class="muted" style="margin-bottom: 1rem;">
+        Short walkthrough: architecture, startup, and how to view data across Kafka → Spark → Ray.
+      </p>
+      <div class="video-embed" aria-label="YouTube demo video">
+        <iframe
+          width="560"
+          height="315"
+          src="https://www.youtube.com/embed/O7TBcRkUm0E?autoplay=1&mute=1"
+          title="YouTube video player"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <p class="muted" style="margin-top: 0.75rem; margin-bottom: 0;">
+        If the embed shows an error, open directly on YouTube:
+        <a href="https://youtu.be/O7TBcRkUm0E" target="_blank" rel="noopener noreferrer">Watch video on YouTube</a>.
+      </p>
+    </section>
+
+    <section class="section">
       <h2>References</h2>
       <p class="muted" style="margin-bottom: 1rem;">Data sources, APIs, frameworks, and architecture.</p>
       <ul class="refs">
         <li>
-          <strong>Open-Meteo API</strong> — Free weather API.
-          <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">https://open-meteo.com/</a>
+          <strong>NOAA & National Weather Service API </strong> — Free weather API.
+          <a href="https://api.weather.gov/" target="_blank" rel="noopener noreferrer">https://api.weather.gov/</a>
         </li>
         <li>
-          <strong>Kaggle: Historical Hourly Weather Data 2012–2017</strong> — Training data.
-          <a href="https://www.kaggle.com/datasets/selfishgene/historical-hourly-weather-data" target="_blank" rel="noopener noreferrer">Kaggle dataset</a>
+          <strong>NOAA Weather Data, Daily Summary 1996-2025</strong> — Training data.
+          <a href="" target="_blank" rel="noopener noreferrer"></a>
         </li>
         <li>
           <strong>Lambda Architecture</strong> — Batch + speed + serving layers.
@@ -214,5 +236,47 @@
       Ultimate Stream and Distribute — Kafka → Spark → Ray | UW Madison CS 544
     </p>
   </div>
+
+  <script>
+    (function () {
+      const iframe = document.querySelector(".video-embed iframe");
+      if (!iframe) return;
+
+      // #region agent log
+      function agentLog(hypothesisId, message, data) {
+        try {
+          fetch("http://127.0.0.1:7243/ingest/cf240240-1d05-4b3d-ab49-a70bba0995c9", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: "debug-session",
+              runId: "initial",
+              hypothesisId,
+              location: "showcase/index.html:video-iframe",
+              message,
+              data,
+              timestamp: Date.now(),
+            }),
+          }).catch(() => {});
+        } catch (e) {
+          // swallow logging errors
+        }
+      }
+      // #endregion
+
+      agentLog("H1", "iframe-found", { src: iframe.src });
+
+      iframe.addEventListener("load", function () {
+        agentLog("H2", "iframe-load-event", { src: iframe.src });
+      });
+
+      iframe.addEventListener("error", function (event) {
+        agentLog("H3", "iframe-error-event", {
+          src: iframe.src,
+          errorType: event?.type || "unknown",
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
