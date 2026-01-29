@@ -59,7 +59,7 @@ function Architecture() {
                     Component: <code className="code-text">Kafka Broker</code>
                   </div>
                   <div style={{ color: '#333333', fontSize: '0.8rem', lineHeight: '1.6' }}>
-                    Weather data collected from Open-Meteo API (15s interval)<br/>
+                    Weather data collected from NOAA & National Weather Service API  (15s interval)<br/>
                     Published to topic: <code className="code-text">weather-raw</code> (4 partitions)<br/>
                     Format: JSON | Schema: station_id, timestamp, temperature, humidity, pressure, wind_speed
                   </div>
