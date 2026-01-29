@@ -340,6 +340,7 @@ services:
       - RAY_CLIENT_URL=ray://ray-head:10001
       - MODEL_STORAGE_PATH=/app/models
       - HORIZON_HOURS=7
+      - RAY_NUM_ACTORS=4
     volumes:
       - ./src:/app/src:ro
       - ./models:/app/models

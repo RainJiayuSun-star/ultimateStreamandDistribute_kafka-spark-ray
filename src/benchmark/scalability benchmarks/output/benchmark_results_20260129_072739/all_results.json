@@ -1,0 +1,140 @@
+{
+  "horizontal_scaling": {
+    "test_type": "horizontal_scaling",
+    "workers_tested": [
+      1,
+      2,
+      4
+    ],
+    "duration_per_test": 300,
+    "timestamp": "2026-01-29T07:27:39.518905",
+    "tests": [
+      {
+        "workers": 1,
+        "avg_spark_consumer_lag": 0.0,
+        "avg_ray_consumer_lag": 0.0,
+        "estimated_throughput_msg_per_sec": 50.0,
+        "cpu_usage": {
+          "spark-worker1": 0.0,
+          "ray-worker1": 0.0
+        },
+        "memory_usage": {
+          "spark-worker1": 0.0,
+          "ray-worker1": 0.0
+        },
+        "metrics_samples": 30
+      },
+      {
+        "workers": 2,
+        "avg_spark_consumer_lag": 0.0,
+        "avg_ray_consumer_lag": 0.0,
+        "estimated_throughput_msg_per_sec": 50.0,
+        "cpu_usage": {
+          "spark-worker1": 0.0,
+          "ray-worker1": 0.0
+        },
+        "memory_usage": {
+          "spark-worker1": 0.0,
+          "ray-worker1": 0.0
+        },
+        "metrics_samples": 30
+      },
+      {
+        "workers": 4,
+        "avg_spark_consumer_lag": 0.0,
+        "avg_ray_consumer_lag": 0.0,
+        "estimated_throughput_msg_per_sec": 50.0,
+        "cpu_usage": {
+          "spark-worker1": 0.0,
+          "ray-worker1": 0.0
+        },
+        "memory_usage": {
+          "spark-worker1": 0.0,
+          "ray-worker1": 0.0
+        },
+        "metrics_samples": 30
+      }
+    ]
+  },
+  "load_scaling": {
+    "test_type": "load_scaling",
+    "rates_tested": [
+      1.0,
+      10.0,
+      50.0
+    ],
+    "stations": 50,
+    "duration_per_test": 300,
+    "timestamp": "2026-01-29T07:43:10.586445",
+    "tests": [
+      {
+        "target_rate": 1.0,
+        "actual_rate": 1.0,
+        "messages_sent": 300,
+        "errors": 0,
+        "avg_spark_consumer_lag": 0.0,
+        "avg_ray_consumer_lag": 0.0,
+        "max_spark_consumer_lag": 0,
+        "max_ray_consumer_lag": 0,
+        "rate_accuracy": 100.0
+      },
+      {
+        "target_rate": 10.0,
+        "actual_rate": 9.97,
+        "messages_sent": 2991,
+        "errors": 0,
+        "avg_spark_consumer_lag": 0.0,
+        "avg_ray_consumer_lag": 0.0,
+        "max_spark_consumer_lag": 0,
+        "max_ray_consumer_lag": 0,
+        "rate_accuracy": 99.70000000000002
+      },
+      {
+        "target_rate": 50.0,
+        "actual_rate": 49.61,
+        "messages_sent": 14883,
+        "errors": 0,
+        "avg_spark_consumer_lag": 0.0,
+        "avg_ray_consumer_lag": 0.0,
+        "max_spark_consumer_lag": 0,
+        "max_ray_consumer_lag": 0,
+        "rate_accuracy": 99.22
+      }
+    ]
+  },
+  "partition_scaling": {
+    "test_type": "partition_scaling",
+    "partitions_tested": [
+      2,
+      4,
+      8
+    ],
+    "stations": 50,
+    "rate": 50.0,
+    "duration_per_test": 300,
+    "timestamp": "2026-01-29T07:58:46.899233",
+    "tests": [
+      {
+        "partitions": 2,
+        "success": false,
+        "output": "",
+        "spark_consumer_lag": 0,
+        "ray_consumer_lag": 0
+      },
+      {
+        "partitions": 4,
+        "success": false,
+        "output": "",
+        "spark_consumer_lag": 0,
+        "ray_consumer_lag": 0
+      },
+      {
+        "partitions": 8,
+        "success": false,
+        "output": "",
+        "spark_consumer_lag": 0,
+        "ray_consumer_lag": 0
+      }
+    ]
+  }
+}

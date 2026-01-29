@@ -1,0 +1,57 @@
+{
+  "test_type": "horizontal_scaling",
+  "workers_tested": [
+    1,
+    2,
+    4
+  ],
+  "duration_per_test": 300,
+  "timestamp": "2026-01-29T07:27:39.518905",
+  "tests": [
+    {
+      "workers": 1,
+      "avg_spark_consumer_lag": 0.0,
+      "avg_ray_consumer_lag": 0.0,
+      "estimated_throughput_msg_per_sec": 50.0,
+      "cpu_usage": {
+        "spark-worker1": 0.0,
+        "ray-worker1": 0.0
+      },
+      "memory_usage": {
+        "spark-worker1": 0.0,
+        "ray-worker1": 0.0
+      },
+      "metrics_samples": 30
+    },
+    {
+      "workers": 2,
+      "avg_spark_consumer_lag": 0.0,
+      "avg_ray_consumer_lag": 0.0,
+      "estimated_throughput_msg_per_sec": 50.0,
+      "cpu_usage": {
+        "spark-worker1": 0.0,
+        "ray-worker1": 0.0
+      },
+      "memory_usage": {
+        "spark-worker1": 0.0,
+        "ray-worker1": 0.0
+      },
+      "metrics_samples": 30
+    },
+    {
+      "workers": 4,
+      "avg_spark_consumer_lag": 0.0,
+      "avg_ray_consumer_lag": 0.0,
+      "estimated_throughput_msg_per_sec": 50.0,
+      "cpu_usage": {
+        "spark-worker1": 0.0,
+        "ray-worker1": 0.0
+      },
+      "memory_usage": {
+        "spark-worker1": 0.0,
+        "ray-worker1": 0.0
+      },
+      "metrics_samples": 30
+    }
+  ]
+}

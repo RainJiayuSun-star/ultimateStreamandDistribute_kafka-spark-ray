@@ -432,6 +432,8 @@ def main():
     """Main entry point."""
     import argparse
     
+    default_num_actors = int(os.getenv("RAY_NUM_ACTORS", "4"))
+    
     parser = argparse.ArgumentParser(description='Ray ML Inference Consumer')
     parser.add_argument(
         '--model-name',
@@ -442,8 +444,8 @@ def main():
     parser.add_argument(
         '--num-actors',
         type=int,
-        default=4,
-        help='Number of Ray inference actors'
+        default=default_num_actors,
+        help='Number of Ray inference actors (default from RAY_NUM_ACTORS env or 4)'
     )
     parser.add_argument(
         '--no-gpu',

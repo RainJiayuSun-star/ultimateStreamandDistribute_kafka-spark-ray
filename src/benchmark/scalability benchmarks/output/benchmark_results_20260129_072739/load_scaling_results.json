@@ -1,0 +1,46 @@
+{
+  "test_type": "load_scaling",
+  "rates_tested": [
+    1.0,
+    10.0,
+    50.0
+  ],
+  "stations": 50,
+  "duration_per_test": 300,
+  "timestamp": "2026-01-29T07:43:10.586445",
+  "tests": [
+    {
+      "target_rate": 1.0,
+      "actual_rate": 1.0,
+      "messages_sent": 300,
+      "errors": 0,
+      "avg_spark_consumer_lag": 0.0,
+      "avg_ray_consumer_lag": 0.0,
+      "max_spark_consumer_lag": 0,
+      "max_ray_consumer_lag": 0,
+      "rate_accuracy": 100.0
+    },
+    {
+      "target_rate": 10.0,
+      "actual_rate": 9.97,
+      "messages_sent": 2991,
+      "errors": 0,
+      "avg_spark_consumer_lag": 0.0,
+      "avg_ray_consumer_lag": 0.0,
+      "max_spark_consumer_lag": 0,
+      "max_ray_consumer_lag": 0,
+      "rate_accuracy": 99.70000000000002
+    },
+    {
+      "target_rate": 50.0,
+      "actual_rate": 49.61,
+      "messages_sent": 14883,
+      "errors": 0,
+      "avg_spark_consumer_lag": 0.0,
+      "avg_ray_consumer_lag": 0.0,
+      "max_spark_consumer_lag": 0,
+      "max_ray_consumer_lag": 0,
+      "rate_accuracy": 99.22
+    }
+  ]
+}
