@@ -1,8 +1,11 @@
 # Ultimate Stream and Distribute
 
-UW Madison Fall 2025 Big Data System (CS544) final independent honors project. A Lambda Architecture-based real-time weather forecasting system integrating Kafka, Spark, and Ray for distributed stream processing and ML inference.
+UW Madison Fall 2025 Intro to Big Data System (CS544) final independent honors project. A Lambda Architecture-based real-time weather forecasting system integrating Kafka, Spark, and Ray for distributed stream processing and ML inference.
+
+**Links:**
 - Website: https://rainjiayusun-star.github.io/ultimateStreamandDistribute_kafka-spark-ray/
 - Demo: https://youtu.be/O7TBcRkUm0E
+- **Design document**: [Documentation/design.md](Documentation/design.md) — implementation design, communication mechanisms, system design, client interface, evaluation, and data sources
 ## Purpose
 
 After learning several well-known distributed systems from the course, I'm interested to see the outcome when I combine multiple of them. This project demonstrates a general-purpose multi-distributed system architecture for real-time stream processing and ML inference. 
