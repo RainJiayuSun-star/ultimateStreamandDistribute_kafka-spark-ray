@@ -5,9 +5,9 @@ UW Madison Fall 2025 Big Data System (CS544) final independent honors project. A
 - Demo: https://youtu.be/O7TBcRkUm0E
 ## Purpose
 
-After learning several well-known distributed systems from the course, I'm interested to see the outcome when I combine multiple of them. This current project ingests real-time weather data from multiple stations, processes it through Spark streaming for feature aggregation, and performs ML inference using Ray for forecasting and potentially anomaly detection.
+After learning several well-known distributed systems from the course, I'm interested to see the outcome when I combine multiple of them. This project demonstrates a general-purpose multi-distributed system architecture for real-time stream processing and ML inference. 
 
-This project demonstrates a general-purpose multi-distributed system architecture for real-time stream processing and ML inference. While implemented for weather forecasting, the same architecture pattern can be applied to other domains such as:
+It now serves for real-time weather forecasting system. It ingests real-time weather data from multiple stations, processes it through Spark streaming for feature aggregation, and performs ML inference using Ray for forecasting and potentially anomaly detection. While implemented for weather forecasting, the same architecture pattern can be applied to other domains such as:
 - **Financial markets**: Stock price prediction, trading signal generation, fraud detection
 - **IoT sensor networks**: Industrial monitoring, predictive maintenance, anomaly detection
 - **E-commerce**: Real-time recommendation systems, demand forecasting, inventory optimization
