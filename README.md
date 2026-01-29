@@ -1,11 +1,11 @@
 # Ultimate Stream and Distribute
 
 UW Madison Fall 2025 Big Data System (CS544) final independent honors project. A Lambda Architecture-based real-time weather forecasting system integrating Kafka, Spark, and Ray for distributed stream processing and ML inference.
-\n Link to website: https://rainjiayusun-star.github.io/ultimateStreamandDistribute_kafka-spark-ray/
-\n Link to demom: https://youtu.be/O7TBcRkUm0E
+- Website: https://rainjiayusun-star.github.io/ultimateStreamandDistribute_kafka-spark-ray/
+- Demo: https://youtu.be/O7TBcRkUm0E
 ## Purpose
 
-Ingests real-time weather data from multiple stations, processes it through Spark streaming for feature aggregation, and performs ML inference using Ray for forecasting and anomaly detection.
+After learning several well-known distributed systems from the course, I'm interested to see the outcome when I combine multiple of them. This current project ingests real-time weather data from multiple stations, processes it through Spark streaming for feature aggregation, and performs ML inference using Ray for forecasting and potentially anomaly detection.
 
 This project demonstrates a general-purpose multi-distributed system architecture for real-time stream processing and ML inference. While implemented for weather forecasting, the same architecture pattern can be applied to other domains such as:
 - **Financial markets**: Stock price prediction, trading signal generation, fraud detection
@@ -16,10 +16,27 @@ This project demonstrates a general-purpose multi-distributed system architectur
 
 The core architecture (Kafka → Spark → Ray → API) remains the same; only the data sources, feature engineering, and ML models need to be adapted for each use case.
 
+## Current Status
+
+**✅ System is fully operational end-to-end**
+
+The pipeline successfully processes real-time weather data from 5 stations and generates 7-hour temperature forecasts using a trained LSTM model. All core components are implemented and working:
+
+- ✅ Data ingestion (Kafka Producer)
+- ✅ Stream processing (Spark Streaming)
+- ✅ ML inference (Ray with LSTM model)
+- ✅ REST API (Flask endpoints)
+- ✅ Frontend dashboard (React + TypeScript)
+
+See [Project Status](#project-status) section below for detailed component status and known limitations.
 
 ## Quick Start
 
+To start the processing, use docker
 ```bash
+# Build all the images
+docker compose build
+
 # Start all services
 docker compose up -d
 
@@ -35,6 +52,16 @@ docker compose down
 - Ray Dashboard: http://localhost:8265
 - API: http://localhost:5000
 
+After the docker is running, you can open dashboard to view system status and messages
+```bash
+# to go to frontend directory, 
+cd frontend
+# run
+npm install
+npm run dev
+```
+The frontend will be available at `http://localhost:3000`
+
 ## Project Structure
 
 ```
@@ -42,9 +69,15 @@ docker compose down
 │   ├── kafka_weather/      # Kafka producer and data collector
 │   ├── spark/               # Spark streaming app and aggregations
 │   ├── ray/                 # Ray inference actors and models
-│   ├── api/                 # REST API and dashboard
+│   │   ├── inference/       # Ray inference pipeline (consumer, actor)
+│   │   ├── models/         # Model loaders and wrappers
+│   │   └── training/       # Model training scripts
+│   ├── api/                 # REST API (Flask)
+│   ├── testers/             # Test consumers for each pipeline stage
 │   └── utils/               # Configuration and utilities
-├── docker-compose.yml       # Service orchestration
+├── frontend/                # React + TypeScript dashboard
+├── models/                  # Trained ML models
+├── docker-compose.yml       # Service orchestration (14 containers)
 ├── Dockerfile.*            # Container definitions
 └── Documentation/          # Architecture and design docs
 ```
@@ -56,11 +89,11 @@ docker compose down
 The system follows a **Lambda Architecture** pattern with three distinct layers:
 
 1. **Speed Layer (Real-time Processing)**
-   - Kafka ingests raw weather data from Open-Meteo API
+   - Kafka ingests raw weather data from NWS (National Weather Service) API
    - Spark Streaming processes data with sliding windows (5-minute windows, 1-minute slides)
-   - Ray performs real-time ML inference on aggregated features
+   - Ray performs real-time ML inference on aggregated features using LSTM model
 
-2. **Batch Layer (Model Training)**
+2. **Batch Layer (Model Training) [didn't implement here]**
    - Ray training cluster processes historical data
    - Models are trained and stored for inference
 
@@ -72,20 +105,24 @@ The system follows a **Lambda Architecture** pattern with three distinct layers:
 ### Data Pipeline
 
 ```
-NOAA National Weather Service API
-    ↓ (HTTP requests every 15s)
+NWS (National Weather Service) API
+    ↓ (HTTP requests every 15s, 5 stations)
 Kafka Producer → weather-raw topic (4 partitions)
     ↓ (Spark Structured Streaming)
 Spark Cluster → Aggregations & Feature Engineering
-    ↓ (5-min sliding windows)
+    ↓ (5-min sliding windows, 1-min slide)
 weather-features topic (4 partitions)
     ↓ (Ray Inference Actors)
-Ray Cluster → ML Inference (Forecasting + Anomaly Detection)
+Ray Cluster → ML Inference (LSTM Forecasting - 7h horizon)
     ↓ (Parallel processing)
 weather-predictions topic (4 partitions)
     ↓ (API Consumer)
 REST API → HTTP Endpoints
+    ↓
+Frontend Dashboard → Real-time Visualization
 ```
+
+**Status**: ✅ **Fully Operational** - All stages working end-to-end
 
 ### Component Responsibilities
 
@@ -107,6 +144,7 @@ REST API → HTTP Endpoints
 | Spark Streaming | 1 | 1 | 2 GB | 1 | 2 GB |
 | Ray Head | 1 | 1 | 2 GB | 1 | 2 GB |
 | Ray Workers | 4 | 1 | 3 GB | 4 | 12 GB |
+| Ray Inference | 1 | 1 | 2 GB | 1 | 2 GB |
 | API | 1 | 1 | 2 GB | 1 | 2 GB |
 | **TOTAL** | **14** | - | - | **13.5** | **35 GB** |
 
@@ -127,8 +165,9 @@ REST API → HTTP Endpoints
 **Components:**
 - **Kafka**: Data ingestion and message queuing (3 topics: raw, features, predictions)
 - **Spark**: Sliding window aggregations and feature engineering (1 master + 4 workers)
-- **Ray**: ML inference for forecasting and anomaly detection (1 head + 4 workers)
-- **API**: REST API and dashboard for serving predictions
+- **Ray**: ML inference for forecasting using LSTM model (1 head + 4 workers + inference consumer)
+- **API**: REST API (Flask) for serving predictions
+- **Frontend**: React + TypeScript dashboard for real-time visualization
 
 ## Technologies
 
@@ -140,22 +179,47 @@ REST API → HTTP Endpoints
 
 ## Data Flow
 
-1. **Producer** fetches weather data from Open-Meteo API every 15 seconds
+1. **Producer** fetches weather data from NWS API every 15 seconds (5 stations)
 2. **Spark Streaming** consumes raw data, applies 5-minute sliding windows, aggregates metrics
-3. **Ray Inference** consumes aggregated features, performs forecasting (24-hour horizon) and anomaly detection
+3. **Ray Inference** consumes aggregated features, performs forecasting (7-hour horizon) using LSTM model
 4. **API** serves predictions via REST endpoints
+5. **Frontend Dashboard** provides real-time visualization (React + TypeScript)
 
 ## Features
 
-- ✅ Real-time weather data ingestion from 5+ stations - **Kafka**
-- ✅ Sliding window aggregations (mean, std, min, max) - **Spark**
-- ✅ Time series forecasting (24-hour predictions) - **Ray**
-- ⏳ Anomaly detection using statistical and ML models - **Ray** (basic implementation, ML models pending)
-- ✅ Distributed processing across multiple workers - **Kafka, Spark, Ray**
-- ✅ Fault-tolerant with checkpointing - **Spark**
-- ⏳ REST API endpoints for predictions - **API** (structure in place, endpoints pending)
-- ⏳ Real-time dashboard visualization - **API** (pending)
-- ⏳ Model training pipeline - **Ray** (inference implemented, training pipeline pending)
+### ✅ Implemented Features
+
+- ✅ **Real-time weather data ingestion** from 5 stations (Madison, Milwaukee, Chicago, Minneapolis, Des Moines) - **Kafka**
+- ✅ **Sliding window aggregations** (mean, std, min, max) with 5-minute windows - **Spark**
+- ✅ **Time series forecasting** (7-hour horizon) using LSTM model - **Ray**
+- ✅ **Distributed processing** across multiple workers (4 Spark workers, 4 Ray workers) - **Kafka, Spark, Ray**
+- ✅ **Fault-tolerant** with checkpointing - **Spark**
+- ✅ **REST API endpoints** for predictions - **API** (Flask with CORS)
+  - `/health` - Health check
+  - `/predictions/latest` - Latest predictions
+  - `/predictions` - Predictions with limit
+  - `/topics/weather-raw` - Raw data by partition
+  - `/topics/weather-features` - Features by partition
+  - `/topics/weather-predictions` - Predictions by partition
+  - `/stations/all` - All station data from all topics
+- ✅ **Real-time dashboard** visualization - **Frontend** (React + TypeScript with Recharts, Leaflet)
+- ✅ **Model training pipeline** - **Ray** (LSTM model trained and deployed)
+
+### ⏳ Future Enhancements
+
+- ⏳ **Anomaly detection** - Deferred to future phase (current XGBoost model not suitable for short-term anomalies)
+- ⏳ **Extended forecasting horizon** - 24-hour predictions (requires model retraining)
+- ⏳ **Time-aware features** - Add hour/day encoding to improve daily cycle prediction
+- ⏳ **Historical sequence input** - Use actual historical data instead of repeated features
+
+### Current Model
+
+- **Forecasting Model**: `LSTM_FineTuned_20260124_193541`
+  - Type: LSTM (Keras)
+  - Features: temperature, wind_speed, dewpoint (metric units)
+  - Lookback: 7 hours
+  - Forecast horizon: 7 hours
+  - Status: ✅ Trained and deployed
 
 ## Example Outputs (from testers)
 
@@ -262,68 +326,71 @@ The following testers can be used to verify data at each stage of the pipeline:
   --------------------------------------------------------------------------------
   ```
 
-## To Do
+- **`test_ray_predictions.py`** - Consumes and displays predictions from the `weather-predictions` Kafka topic. Verifies that Ray inference is correctly generating forecasts using the LSTM model. Shows temperature predictions for the next 7 hours with confidence intervals.
+  ```bash
+  docker exec -it ray-head python3 /app/src/testers/test_ray_predictions.py
+  ```
 
-### High Priority
+## Testing the Pipeline
 
-- [ ] **Complete REST API Implementation**
-  - [ ] Implement Flask/FastAPI application with endpoints
-  - [ ] Create `/predictions/{station_id}` endpoint
-  - [ ] Create `/predictions/{station_id}/history` endpoint
-  - [ ] Create `/anomalies` endpoint for recent anomalies
-  - [ ] Create `/health` endpoint for system health checks
-  - [ ] Create `/metrics` endpoint for performance metrics
-  - [ ] Implement Kafka consumer for API to consume from `weather-predictions` topic
+### Verify End-to-End Flow
 
-- [ ] **Enhance ML Models**
-  - [ ] Upgrade anomaly detection from statistical to ML models (Isolation Forest/Autoencoder)
-  - [ ] Improve forecasting model (upgrade from simple linear to LSTM/Prophet/XGBoost)
-  - [ ] Implement model training pipeline with historical data
-  - [ ] Add model versioning and management system
-  - [ ] Implement model evaluation metrics (MAE, RMSE, MAPE for forecasting; Precision, Recall, F1 for anomaly)
+1. **Check Producer** (Raw Data):
+   ```bash
+   docker exec -it kafka python3 /app/src/testers/debug_consumer.py
+   ```
 
-- [ ] **Dashboard Implementation**
-  - [ ] Create real-time dashboard frontend
-  - [ ] Implement weather station map visualization
-  - [ ] Add time series charts for predictions
-  - [ ] Implement anomaly alerts/notifications
-  - [ ] Add system health monitoring dashboard
+2. **Check Spark** (Aggregated Features):
+   ```bash
+   docker exec -it spark-master python3 /app/src/testers/test_spark_features.py
+   ```
 
-### Medium Priority
+3. **Check Ray** (Predictions):
+   ```bash
+   docker exec -it ray-head python3 /app/src/testers/test_ray_predictions.py
+   ```
 
-- [ ] **Model Training Pipeline**
-  - [ ] Set up Ray Train for distributed model training
-  - [ ] Implement data loading from historical datasets
-  - [ ] Create training scripts for forecasting and anomaly models
-  - [ ] Implement model checkpointing during training
-  - [ ] Add automated retraining pipeline
+4. **Check API** (REST Endpoints):
+   ```bash
+   curl http://localhost:5000/health
+   curl http://localhost:5000/predictions/latest
+   curl http://localhost:5000/stations/all
+   ```
 
-- [ ] **Testing & Validation**
-  - [ ] Add comprehensive unit tests for all components
-  - [ ] Implement integration tests for end-to-end pipeline
-  - [ ] Add performance benchmarking tests
-  - [ ] Validate model accuracy with test datasets
+### View Logs
 
-- [ ] **Documentation**
-  - [ ] Complete API documentation
-  - [ ] Add code comments and docstrings
-  - [ ] Create deployment guide
-  - [ ] Document model training procedures
+```bash
+# View all logs
+docker compose logs -f
 
-### Low Priority / Future Enhancements
+# View specific service logs
+docker compose logs -f ray-inference
+docker compose logs -f spark-streaming
+docker compose logs -f api
+```
 
-- [ ] **Performance Optimization**
-  - [ ] Optimize Spark windowing performance
-  - [ ] Optimize Ray inference latency
-  - [ ] Implement caching mechanisms
-  - [ ] Fine-tune resource allocation
+## Frontend Dashboard
 
-- [ ] **Advanced Features**
-  - [ ] Implement model A/B testing
-  - [ ] Add model performance monitoring and alerts
-  - [ ] Implement hot-reload for models without restart
-  - [ ] Add support for more weather stations
-  - [ ] Implement data persistence layer for historical queries
+The project includes a React + TypeScript frontend dashboard located in the `frontend/` directory.
+
+### Running the Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will be available at `http://localhost:3000`
+
+### Frontend Features
+
+- Real-time weather station map (Leaflet)
+- Time series charts for predictions (Recharts)
+- Pipeline status monitoring
+- System health metrics
+- Kafka topic data visualization
+
 
 ## Moving on from this project
 The same architecture could also be used for: 
